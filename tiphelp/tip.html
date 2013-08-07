@@ -1,0 +1,53 @@
+<html>
+<head>
+	<link rel="stylesheet" href="poshytip/tip-yellow/tip-yellow.css"
+	type="text/css" media="all" />
+	 <script type="text/javascript" src="jquery-1.5.2.min.js"></script>
+	 <script type="text/javascript" src="poshytip/jquery.poshytip.min.js"></script>
+	<script type="text/javascript" src="tip.js"></script>
+	<script>
+$(function(){
+	ubtip.initTip();
+	//$("#test").click(clickt);
+
+	$('#test').poshytip({
+		content: "zyoang",
+		followCursor: false,
+		slide: false
+	});
+
+		$('#test1').poshytip({
+		content: function(updateCallback) {
+		window.setTimeout(function() {
+			updateCallback('Tooltip content updated!');
+		}, 1000);
+		return 'Loading...';
+	},
+		followCursor: false,
+		slide: false
+	});
+});
+
+
+	</script>
+	<style>
+	.ubhelp
+	{
+		background:url(question_white.png) no-repeat;
+		width:16px;
+		height:16px;
+		text-decoration: none;
+		display:inline-block;
+	}
+	</style>
+</head>
+<body>
+<div id="test">tip</div>
+	<span _ubtip="index_tip1" _u2btip_iconshow="1" >活跃度</span>
+<div style="border:1px solid black;width:450px;height:100px;">
+	<span _ubtip="t1" _ubtip_iconshow="1" >指标</span>
+</div>
+
+<div id="test1">test1,自定义加载内容</div>
+</body>
+</html>
