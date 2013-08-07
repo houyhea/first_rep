@@ -1,0 +1,331 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+  <title> New Document </title>
+  <link rel="stylesheet" type="text/css" href='indicator.css' />
+  <script type="text/javascript" src="jquery-1.5.2.min.js"></script>
+
+
+<script>
+var jtpl=(function(){
+	return {
+		delimiterleft:"\\[\\[",
+		delimiterright:"\\]\\]",
+		replaceVar:function(html,obj)//变量替换
+		{
+			if(typeof obj!='object')return '';
+
+			//换正则表达式来解析
+			html=html.replace(new RegExp(this.delimiterleft+"([^\\[\\]]*?)"+this.delimiterright,'igm')
+				,function($,$1){
+					return obj[$1]?obj[$1]:$;
+				
+			});
+			return html;
+		},
+		parse:function()
+		{
+			var html=arguments[0]||'';
+			var obj=arguments[1]||{};
+			return this.replaceVar(html,obj);
+		}
+	
+	}
+
+}());
+
+
+
+
+function Indicator()
+{
+	this.selectedItems=[];//e.g: ["pv","vcnt"]
+	
+	this.selGroup=[];
+	this.maxSel=2;
+	this.title="";
+	this.containerId="";
+	this.v=true;
+	uuid=0;
+	uuid++;
+}
+Indicator.prototype={
+	guid:function()
+	{
+		return uuid;
+		
+	},
+	init:function()
+	{
+		
+	},
+	onChange:function(data)//指标改变事件回调方法
+	{
+		//此处，由外部赋值，实现事件响应
+	},
+	popup:function(event)
+	{
+		event.stopPropagation();
+		console.log("popup method");
+		var pop=$("#popup");
+		if(pop.is(":visible"))
+		{
+			this.hideIndicatorPopup();
+
+		}
+		else
+		{
+			this.showIndicatorPopup();
+		}
+		
+
+	},
+	showIndicatorPopup:function()
+	{
+		var pop=$("#popup");
+		this.resizePopup();
+
+		pop.show();
+	
+		if(pop.is(":visible"))
+			$("#in_con #wraper").addClass("select");
+		else
+			$("#in_con #wraper").removeClass("select");
+
+		$(document).one("click", $.proxy(this.hideIndicatorPopup,this));
+
+	},
+	resizePopup:function()
+	{
+		var h=$("#wraper").height();
+		var pop=$("#popup");
+		var l=$("#wraper").position().left;
+		var t=$("#wraper").position().top;
+		pop.css("left",l);
+		pop.css("top",t+h+12);//12是padding top bottom 10+border 2
+		//pop.css("top",t+h);
+	},
+	hideIndicatorPopup:function()
+	{
+		console.log("hide popup");
+		var pop=$("#popup");
+		pop.hide();
+		if(pop.is(":visible"))
+			$("#in_con #wraper").addClass("select");
+		else
+			$("#in_con #wraper").removeClass("select");
+
+	},
+	remove:function(array,obj){
+		var a=array.length;
+		while(a--){
+			if(a in array&&array[a]===obj){
+				array.splice(a,1)
+			}
+			
+		}
+		return array;
+	},
+	setChecked:function(checkbox_value,checked)
+	{
+		$("#indicatoritems input").each(function(i,item){
+			if(item.value==checkbox_value)
+			{
+				item.checked=checked;
+				return false;
+			}
+		});
+	},
+	updateTitle:function()
+	{
+		var t=$("#wraper #indicatorTitle");
+		var g=[];
+		$("#indicatoritems input").each(function(i,item){
+			if(item.checked)
+			{
+				g.push(item.title);
+			}
+		});
+		t.html(g.join("、"));
+		return t.html();
+	},
+	bind:function()
+	{
+
+		$("#wraper").bind("click",$.proxy(this.popup,this));
+		//和document的click配套使用，防止弹出状态，点击面板隐藏。
+		$("#popup").bind("click",function(e){
+			e.stopPropagation();
+			console.log("stopevent");
+		});
+		var that=this;
+		$("#indicatoritems input").bind("change",function(){
+			var selitems=that.selectedItems;
+			if(this.checked)
+			{
+				selitems.push(this.value);
+			}
+			else{
+				if(selitems.length==1)
+				{
+					this.checked=true;
+					return false;
+				}
+				
+			   that.remove(selitems,this.value)
+			}
+			if(selitems.length>that.maxSel){
+				
+				var e=selitems.splice(0,1)[0];
+
+				that.setChecked(e,false);
+			   
+			}
+			that.updateTitle();
+			that.resizePopup();//IE 7下需要重新计算下popup位置
+			that.onChange(selitems);
+			
+		});
+		
+	},
+	itemClick:function()
+	{
+		
+	},
+	getChecked:function(v)
+	{
+		var i=jQuery.inArray(v.value,this.selectedItems);
+		return i==-1?"":"checked";
+		//return "checked";
+		return "";
+	},
+	renderIndicators:function()
+	{
+		var items=[];
+		var itemtmp=$("#indicator_item").html();
+		for(var i in this.selGroup)
+		{
+			var type=(this.maxSel==1)?"radio":"checkbox";
+
+			var obj={name:this.containerId+this.guid(),title:this.selGroup[i].title,id:this.selGroup[i].id,type:type,checked:this.getChecked(this.selGroup[i]),value:this.selGroup[i].value};
+
+			var html=jtpl.parse(itemtmp,obj);
+			items.push(html);
+		}
+
+		var obj={title:"加载中...",items:items.join(""),maxSel:this.maxSel};
+		var tmp=$("#indicator_all").html(); 
+		var all_html=jtpl.parse(tmp,obj);
+		
+		return all_html;
+	},
+	setSelectedItems:function()
+	{
+		for(var i in this.selGroup)
+		{
+			if(this.selectedItems.length>=this.maxSel)
+				return;
+			var v=this.selGroup[i];
+			if(v.selected)
+				this.selectedItems.push(v.value);
+		}
+	},
+	render:function()
+	{
+		if(this.maxSel<1)this.maxSel=1;
+
+		this.setSelectedItems();
+		var html=this.renderIndicators();
+		$('#'+this.containerId).html(html);
+		this.updateTitle();//只能放在这里执行，否则方法内找不到input
+		this.bind();
+		
+	}
+
+}
+
+
+$(window).ready(
+function() {
+	var con=new Indicator();
+	con.onChange=onIndicatorChange;	
+	con.containerId="indicon";
+	con.maxSel=2;
+	con.selGroup=[
+	{title:"客户活跃度",id:"c1",value:"pv1",selected:false}
+	,{title:"服务访问次数",id:"c2",value:"pv2",selected:true}
+	,{title:"页面浏览量",id:"c3",value:"pv3",selected:false}
+	,{title:"统计",id:"c4",value:"pv4",selected:false}
+	,{title:"转化率",id:"c5",value:"pv5",selected:false}
+	,{title:"系统环境",id:"c6",value:"pv6",selected:false}
+	];
+	con.render();
+
+
+/*
+		var con1=new Indicator();
+	con1.onChange=onIndicatorChange;	
+	con1.containerId="indicon1";
+	con1.maxSel=2;
+	con1.selGroup=[
+	{title:"客户活跃度",id:"c1",value:"pv1",selected:false}
+	,{title:"服务访问次数",id:"c2",value:"pv2",selected:true}
+	,{title:"页面浏览量",id:"c3",value:"pv3",selected:false}
+	,{title:"统计",id:"c4",value:"pv4",selected:false}
+	,{title:"转化率",id:"c5",value:"pv5",selected:false}
+	,{title:"系统环境",id:"c6",value:"pv6",selected:false}
+	];
+	con1.render();
+	*/
+});
+function onIndicatorChange(data)
+{
+	alert(data.join(","));
+}
+</script>
+ </head>
+
+ <body>
+<h1>指标组件：</h1>
+<div id="indicon" ></div>
+
+
+
+
+////////////
+<div id="indicon1" ></div>
+
+
+
+
+
+
+<script type="text/html" id="indicator_all">
+<div id="in_con" class="indicator_container">
+	<div id="wraper" >指标：<a id="in_title" ><span class="title" id="indicatorTitle">[[title]]</span></a></div>
+	
+	
+	<div id="popup" style="display:none">
+
+		<div id="indicatoritems" class="clearfix">
+		
+			[[items]]
+			
+		</div>
+		
+		<div id="tip">最多可选择<span style="color:#fe9985;margin:0 5px;">[[maxSel]]</span>项指标</div>
+	</div>
+
+	
+</div>
+
+</script>
+
+<script type="text/html" id="indicator_item">
+<label for="[[id]]" class="item">
+	<input name="indicator_[[name]]" type="[[type]]" title="[[title]]" id="[[id]]" [[checked]] value="[[value]]"/>[[title]]
+</label>
+
+</script>
+ </body>
+</html>
