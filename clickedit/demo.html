@@ -1,0 +1,47 @@
+<html>
+ <head>
+  <title> New Document </title>
+  <script type="text/javascript" src="js/jquery-1.5.2.min.js"></script>
+  <script>
+  (function($){
+		
+		
+	  $.fn.clickedit=function()
+	  {
+		  var oldv="";
+		  var that=this;
+		var edithtml="<div><input id='i' type='text'/><button id='btn_ok' >ok</button><button id='btn_cancel' >cancel</button></div>";
+		var click=function(){
+			var cur$=$(this);
+			oldv=cur$.text();
+			cur$.html(edithtml);
+			$("#i").val(oldv);
+			$('#btn_ok').click(
+				function()
+				{
+					that.html($("#i").val());
+					that.bind("click",click);
+				}
+			);
+			$('#btn_cancel').click(
+				function()
+				{
+					that.html(oldv);
+					that.bind("click",click);
+				}
+			);
+			that.unbind("click",click);
+		}
+		that.bind("click",click);
+	  }
+  })(jQuery);
+  </script>
+ </head>
+
+ <body>
+  <div id="editdiv">test</div>
+  <script>
+  $("#editdiv").clickedit();
+  </script>
+ </body>
+</html>
